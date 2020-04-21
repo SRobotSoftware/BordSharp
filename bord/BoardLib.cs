@@ -5,12 +5,12 @@ using System.Linq;
 
 namespace bord
 {
-    public class BoardLib
+    public class BoardLib : IBoardLib
     {
         private BordsContext DB { get; set; }
         public BoardLib(BordsContext db) { DB = db; }
         public Task GetTask(int taskId) => DB.Tasks.Where(t => t.TaskId == taskId).SingleOrDefault();
-        public Task CreateTask(string description, int priority = 1)
+        public Task CreateTask(string description, int priority)
         {
             ValidatePriority(priority);
 
@@ -25,7 +25,7 @@ namespace bord
 
             return task;
         }
-        public Task CreateTask(string boardName, string description, int priority = 1)
+        public Task CreateTask(string boardName, string description, int priority)
         {
             ValidatePriority(priority);
 

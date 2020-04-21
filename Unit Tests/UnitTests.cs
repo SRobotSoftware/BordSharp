@@ -1,5 +1,8 @@
 using bord;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Moq;
+using Moq.Language;
+using System;
 
 namespace Unit_Tests
 {
@@ -8,12 +11,15 @@ namespace Unit_Tests
     {
         private BoardLib boardLib;
         private BordsContext ctx;
+        private Mock<BoardLib> mock;
 
         [TestInitialize]
         public void Setup()
         {
             ctx = new BordsContext(DataContexts.InMemory);
             boardLib = new BoardLib(ctx);
+
+            mock = new Mock<BoardLib>(ctx);
         }
 
         [TestCleanup]
@@ -25,7 +31,7 @@ namespace Unit_Tests
         [TestMethod]
         public void NewTask_NoInput_CreatesDefaultTask()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             Assert.IsTrue(_task.Description == Defaults.DefaultTaskDescription);
             Assert.IsFalse(_task.IsCompleted);
             Assert.IsTrue(_task.Priority == 1);
@@ -54,7 +60,7 @@ namespace Unit_Tests
         public void NewTask_CustomDescription_CreatesNewTaskWithDescription()
         {
             string description = "Test Description";
-            Task _task = boardLib.CreateTask(description);
+            Task _task = boardLib.CreateTask(description, Defaults.DefaultTaskPriority);
             Assert.IsTrue(_task.Description == description);
             Assert.IsFalse(_task.IsCompleted);
             Assert.IsTrue(_task.Priority == 1);
@@ -69,7 +75,7 @@ namespace Unit_Tests
         [TestMethod]
         public void ToggleTaskComplete_Toggles()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             Assert.IsFalse(_task.IsCompleted);
             boardLib.ToggleTaskComplete(_task.TaskId);
             Assert.IsTrue(_task.IsCompleted);
@@ -83,14 +89,14 @@ namespace Unit_Tests
         [TestMethod]
         public void PrioritizeTask_PrioritizeOutOfBounds()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             Assert.ThrowsException<PriorityOutOfBoundsException>(() => boardLib.PrioritizeTask(_task.TaskId, 500));
             Assert.ThrowsException<PriorityOutOfBoundsException>(() => boardLib.PrioritizeTask(_task.TaskId, 0));
         }
         [TestMethod]
         public void PrioritizeTask_PrioritizesTask()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             boardLib.PrioritizeTask(_task.TaskId, 3);
             Assert.IsTrue(_task.Priority == 3);
         }
@@ -98,14 +104,14 @@ namespace Unit_Tests
         public void DescribeTask_DescribesTask()
         {
             string description = "Test Description";
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             boardLib.DescribeTask(_task.TaskId, description);
             Assert.IsTrue(_task.Description == description);
         }
         [TestMethod]
         public void MoveTask_MovesTask()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             string boardname = "TestBoard";
             boardLib.MoveTask(_task.TaskId, boardname);
             Assert.IsTrue(_task.Board.Name == boardname);
@@ -114,7 +120,7 @@ namespace Unit_Tests
         [TestMethod]
         public void DeleteTask_DeletesTask()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             Assert.IsTrue(boardLib.GetBoard(Defaults.DefaultBoardName).Tasks.Count == 1);
             boardLib.DeleteTask(_task.TaskId);
             Assert.IsTrue(boardLib.GetBoard(Defaults.DefaultBoardName).Tasks.Count == 0);
@@ -135,7 +141,7 @@ namespace Unit_Tests
         [TestMethod]
         public void FindTask_FindsTask()
         {
-            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription);
+            Task _task = boardLib.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
             Task _task_2 = boardLib.GetTask(_task.TaskId);
             Assert.AreSame(_task, _task_2);
         }
@@ -144,6 +150,16 @@ namespace Unit_Tests
         {
             var x = boardLib.GetTask(0);
             Assert.IsNull(x);
+        }
+        [TestMethod]
+        public void PrintAll_CallsChildPrintMethods()
+        {
+            mock.Object.CreateTask(Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
+            mock.Object.CreateTask("Test Board", Defaults.DefaultTaskDescription, Defaults.DefaultTaskPriority);
+            mock.Object.PrintAll();
+            mock.Verify(m => m.PrintAll(), Times.Exactly(1));
+            mock.Verify(m => m.PrintBoard(It.IsAny<Board>(), It.IsAny<int>()), Times.Exactly(2));
+            mock.Verify(m => m.PrintTask(It.IsAny<Task>(), It.IsAny<int>()), Times.Exactly(3));
         }
         // Maybe MOQ for testing Print?
     }
