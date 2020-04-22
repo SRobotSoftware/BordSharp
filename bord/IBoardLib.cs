@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using API.Domain.Models;
+using System.Collections.Generic;
 
 namespace bord
 {
@@ -15,7 +16,6 @@ namespace bord
         int GetHighestTaskId(BordsContext db);
         List<Task> GetPendingTasks(Board board);
         string GetPrintableTaskIsCompleted(Task task);
-        string GetPrintableTaskPriority(Task task);
         Task GetTask(int taskId);
         Task MoveTask(int taskId, string boardName);
         void PrintAll();

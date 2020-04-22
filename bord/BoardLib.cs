@@ -1,4 +1,6 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using API.Domain.Models;
+using API.Extensions;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,13 +14,13 @@ namespace bord
         public Task GetTask(int taskId) => DB.Tasks.Where(t => t.TaskId == taskId).SingleOrDefault();
         public Task CreateTask(string description, int priority)
         {
-            ValidatePriority(priority);
+            EPriority epriority = ValidatePriority(priority);
 
             Board board = DB.Boards.Where(b => b.Name == Defaults.DefaultBoardName).SingleOrDefault();
 
             if (board == null) board = GetBoard(Defaults.DefaultBoardName);
 
-            Task task = new Task { BoardId = board.BoardId, Description = description, Priority = priority };
+            Task task = new Task { BoardId = board.BoardId, Description = description, Priority = epriority };
 
             DB.Tasks.Add(task);
             DB.SaveChanges();
@@ -27,10 +29,10 @@ namespace bord
         }
         public Task CreateTask(string boardName, string description, int priority)
         {
-            ValidatePriority(priority);
+            EPriority epriority = ValidatePriority(priority);
 
             Board board = GetBoard(boardName);
-            Task task = new Task { BoardId = board.BoardId, Description = description, Priority = priority };
+            Task task = new Task { BoardId = board.BoardId, Description = description, Priority = epriority };
 
             DB.Tasks.Add(task);
             DB.SaveChanges();
@@ -74,13 +76,13 @@ namespace bord
         }
         public Task PrioritizeTask(int taskId, int priority)
         {
-            ValidatePriority(priority);
+            EPriority epriority = ValidatePriority(priority);
 
             Task task = GetTask(taskId);
 
             if (task == null) throw new BadTaskIdException();
 
-            task.Priority = priority;
+            task.Priority = epriority;
 
             DB.SaveChanges();
 
@@ -122,26 +124,17 @@ namespace bord
 
             return task;
         }
-        private bool ValidatePriority(int priority)
+        private EPriority ValidatePriority(int priority)
         {
             if (priority > 3 || priority < 1) throw new PriorityOutOfBoundsException();
 
-            return true;
+            return (EPriority)priority;
         }
         public string GetPrintableTaskIsCompleted(Task task)
         {
             string value = "[ ]";
 
             if (task.IsCompleted) value = "[X]";
-
-            return value;
-        }
-        public string GetPrintableTaskPriority(Task task)
-        { // GOOGLE: value object
-            string value = "  ";
-
-            if (task.Priority >= 3) value = "!!";
-            else if (task.Priority == 2) value = "! ";
 
             return value;
         }
@@ -168,14 +161,14 @@ namespace bord
         public void PrintTask(Task task, int padAmount = 2)
         {
             if (task.IsCompleted) Console.ForegroundColor = ConsoleColor.Green;
-            else if (task.Priority == 1) Console.ForegroundColor = ConsoleColor.Blue;
-            else if (task.Priority == 2) Console.ForegroundColor = ConsoleColor.Yellow;
-            else if (task.Priority >= 3) Console.ForegroundColor = ConsoleColor.Red;
+            else if (task.Priority == EPriority.low) Console.ForegroundColor = ConsoleColor.Blue;
+            else if (task.Priority == EPriority.medium) Console.ForegroundColor = ConsoleColor.Yellow;
+            else if (task.Priority == EPriority.high) Console.ForegroundColor = ConsoleColor.Red;
 
             Console.WriteLine(
                 "{0} {1} {2} {3}",
                 task.TaskId.ToString().PadLeft(padAmount, '0'),
-                GetPrintableTaskPriority(task),
+                task.Priority.ToDescriptionString().PadRight(2),
                 GetPrintableTaskIsCompleted(task),
                 task.Description);
         }

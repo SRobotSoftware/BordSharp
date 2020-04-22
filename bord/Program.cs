@@ -1,4 +1,5 @@
-﻿using CommandLine;
+﻿using API.Domain.Models;
+using CommandLine;
 using Microsoft.EntityFrameworkCore;
 using System;
 using static bord.CommandVerbs;

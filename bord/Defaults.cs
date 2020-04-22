@@ -1,4 +1,5 @@
-﻿using FileContextCore;
+﻿using API.Domain.Models;
+using FileContextCore;
 using Microsoft.EntityFrameworkCore;
 using System;
 
@@ -9,6 +10,7 @@ namespace bord
         public static string DefaultBoardName => "Tasks";
         public static string DefaultTaskDescription => "Hello World";
         public static int DefaultTaskPriority => 1;
+        public static EPriority DefaultTaskEPriority => EPriority.low;
     }
     public static class DataContexts
     {
